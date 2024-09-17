@@ -27,7 +27,7 @@
 //#define DEBUG_API
 
 // board wake up interval in seconds
-const int WAKEUP_INTERVAL = 3600;
+const int WAKEUP_INTERVAL = 14400;
 
 GxIO_Class io(SPI, /*CS=5*/ SS, /*DC=*/17, /*RST=*/16);
 GxEPD_Class display(io, /*RST=*/16, /*BUSY=*/4);
@@ -64,7 +64,7 @@ bool initializeTime();
 void displayLine(String text);
 String getDayOfWeekInFrench(int dayOfWeek);
 String getMonthInFrench(int month);
-String getCurrentDateString();
+String getCurrentDateString(bool withTime);
 String getNextDayDateString();
 void displayInfo();
 String mapRteTempoColor(const String tempoColor);
@@ -220,7 +220,7 @@ String getMonthInFrench(int month) {
 }
 
 // Function to get current date in French abbreviated format
-String getCurrentDateString() {
+String getCurrentDateString(bool withTime) {
     struct tm timeinfo;
     if (!getLocalTime(&timeinfo)) {
         Serial.println("Echec de récupération de la date !");
@@ -232,8 +232,15 @@ String getCurrentDateString() {
     char dayMonthBuffer[10];
     snprintf(dayMonthBuffer, sizeof(dayMonthBuffer), "%02d %s", timeinfo.tm_mday, month.c_str());        
         
-    return dayOfWeek + " " + String(dayMonthBuffer);
+    String result = dayOfWeek + " " + String(dayMonthBuffer);
+    if (withTime) {
+      char timeBuffer[9];
+      snprintf(timeBuffer, sizeof(timeBuffer), "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);          
+      result = result + " " + String(timeBuffer);
+    }
+    return result;
 }
+
 
 // Function to get next day's date in French abbreviated format
 String getNextDayDateString() {
@@ -282,12 +289,18 @@ void displayInfo() {
     // Set the display rotation
     display.setRotation(rotation);
 
-    String todayString = getCurrentDateString();
+    String todayString = getCurrentDateString(false);
 
     String tomorrowString = getNextDayDateString();
 
     // Calculate positions based on layout parameters
     int secondRectX = leftMargin + rectWidth + rectSpacing;
+
+    // draw refresh date time
+    String now = getCurrentDateString(true);
+    display.setFont(&FreeSans9pt7b);
+    display.setCursor(leftMargin + textOffsetX + adjustTitleX, bottomIndicatorY + textRemainOffsetY);
+    display.print(now);
 
     // Draw the first rectangle (for today)
     display.drawRoundRect(leftMargin, topMargin, rectWidth, rectHeight, borderRadius, GxEPD_BLACK);
