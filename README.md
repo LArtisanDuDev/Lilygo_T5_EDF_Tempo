@@ -2,11 +2,11 @@
 
 ## 📝 Description Générale
 
-Ce dépôt contient le code source pour un dispositif qui affiche les informations relatives au tarif TEMPO d'EDF sur un écran E-Ink, en utilisant un microcontrôleur ESP32. Le dispositif récupère les données TEMPO en temps réel via une API et affiche la couleur du jour et du lendemain
-Ce projet était initialement basé sur https://github.com/kaloskagatos/EDF-Tempo-E-Ink-Display.
-Je ne maintiens plus la branche pour Arduino IDE aussi j'ai supprimé mon fork et recréé ce projet.
+Ce dépôt contient le code source pour un dispositif qui affiche les informations relatives au tarif TEMPO d'EDF sur un écran E-Ink, en utilisant un microcontrôleur ESP32. Le dispositif récupère les données TEMPO en temps réel via une API et affiche la couleur du jour et du lendemain.<br>
+Ce projet était initialement basé sur https://github.com/kaloskagatos/EDF-Tempo-E-Ink-Display.<br>
+Je ne maintiens plus la branche pour Arduino IDE aussi j'ai supprimé mon fork et recréé ce projet.<br>
 Nouveauté 2024 : les API EDF ne répondent plus. Migration du projet vers les API RTE (https://data.rte-france.com/)
-
+<br>
 Photo du projet avant la mise à jour 2024
 ![eTempo Display](doc/eTempo.jpg)
 
