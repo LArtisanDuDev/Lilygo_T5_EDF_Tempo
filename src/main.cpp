@@ -33,7 +33,6 @@ GxEPD_Class display(io, /*RST=*/16, /*BUSY=*/4);
 const char *ntpServer = "pool.ntp.org";
 
 // Global variables to store TEMPO information
-#define DAY_NOT_AVAILABLE "N/A"
 String todayColor = DAY_NOT_AVAILABLE;
 String tomorrowColor = DAY_NOT_AVAILABLE;
 
@@ -69,10 +68,11 @@ void drawBatteryLevel(int batteryTopLeftX, int batteryTopLeftY, int percentage);
 void updateBatteryPercentage(int &percentage, float &voltage);
 bool initializeTime();
 void displayLine(String text);
+tm getTimeWithDelta(int delta);
 String getDayOfWeekInFrench(int dayOfWeek);
 String getMonthInFrench(int month);
-String getCurrentDateString(bool withTime);
-String getNextDayDateString();
+String getShortDateStringAddDelta(int delta);
+String getFullDateStringAddDelta(bool withTime, int delta);
 void displayInfo();
 bool getCurrentTime(struct tm *timeinfo);
 time_t getNextWakeupTime();
@@ -125,49 +125,27 @@ void setup()
     }
     else
     {
-
       TempoLikeSupplyContractAPI *myAPI = new TempoLikeSupplyContractAPI(client_secret, client_id);
 #ifdef DEBUG_API
       myAPI->setDebug(true);
 #endif
-      
-      // création des chaines conteant les dates d'aujourd'hui et de demain pour les api rte
 
-      struct tm timeinfo;
-      if (!getLocalTime(&timeinfo))
-      {
-        Serial.println("Echec de récupération de la date !");
-        return;
-      }
-      char tmpDate[11];
-      strftime(tmpDate, sizeof(tmpDate), "%Y-%m-%d", &timeinfo);
-      String todayDateString = String(tmpDate);
+      int retour = myAPI->fetchColors(
+          getShortDateStringAddDelta(0),
+          getShortDateStringAddDelta(1),
+          getShortDateStringAddDelta(2));
 
-      timeinfo.tm_mday+=1;
-      mktime(&timeinfo); //
-      strftime(tmpDate, sizeof(tmpDate), "%Y-%m-%d", &timeinfo);
-      String tomorrowDateString = String(tmpDate);
-
-      timeinfo.tm_mday+=1;
-      mktime(&timeinfo); //
-      strftime(tmpDate, sizeof(tmpDate), "%Y-%m-%d", &timeinfo);
-      String afterTomorrowDateString = String(tmpDate);
-
-      int retour = myAPI->fetchColors(todayDateString, tomorrowDateString, afterTomorrowDateString);
       if (retour == TEMPOAPI_OK)
       {
-        tomorrowColor = myAPI->tomorrowColor;
         todayColor = myAPI->todayColor;
-
-        // si affichage précédent
+        tomorrowColor = myAPI->tomorrowColor;
+        
+        // clear screen
         display.fillScreen(GxEPD_WHITE);
 
 #ifdef DEBUG_GRID
         drawDebugGrid();
 #endif
-        // Récupération des infos
-        // fetchTempoInformationOnlyRtePreview();
-
         // Display info
         displayInfo();
         display.update();
@@ -316,22 +294,37 @@ String getMonthInFrench(int month)
   return monthsFrench[(month - 1) % 12]; // Use modulo and adjust since tm_mon is [0,11]
 }
 
-// Function to get current date in French abbreviated format
-String getCurrentDateString(bool withTime)
+tm getTimeWithDelta(int delta)
 {
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo))
   {
     Serial.println("Echec de récupération de la date !");
-    return "";
+    timeinfo = {0};
   }
 
+  timeinfo.tm_mday += delta;
+  mktime(&timeinfo);
+  return timeinfo;
+}
+
+String getShortDateStringAddDelta(int delta)
+{
+  struct tm timeinfo = getTimeWithDelta(delta);
+  char tmpDate[11];
+  strftime(tmpDate, sizeof(tmpDate), "%Y-%m-%d", &timeinfo);
+  return String(tmpDate);
+}
+
+String getFullDateStringAddDelta(bool withTime, int delta)
+{
+  struct tm timeinfo = getTimeWithDelta(delta);
   String dayOfWeek = getDayOfWeekInFrench(timeinfo.tm_wday);
   String month = getMonthInFrench(timeinfo.tm_mon + 1); // tm_mon is months since January - [0,11]
-  char dayMonthBuffer[10];
-  snprintf(dayMonthBuffer, sizeof(dayMonthBuffer), "%02d %s", timeinfo.tm_mday, month.c_str());
+  char dayBuffer[3];
+  snprintf(dayBuffer, sizeof(dayBuffer), "%02d", timeinfo.tm_mday);
 
-  String result = dayOfWeek + " " + String(dayMonthBuffer);
+  String result = dayOfWeek + " " + String(dayBuffer) + " " + month;
   if (withTime)
   {
     char timeBuffer[9];
@@ -339,28 +332,6 @@ String getCurrentDateString(bool withTime)
     result = result + " " + String(timeBuffer);
   }
   return result;
-}
-
-// Function to get next day's date in French abbreviated format
-String getNextDayDateString()
-{
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo))
-  {
-    Serial.println("Echec de récupération de la date !");
-    return "";
-  }
-
-  // Add one day to the current time
-  timeinfo.tm_mday++;
-  mktime(&timeinfo); // Normalize the tm structure after manual increment
-
-  String dayOfWeek = getDayOfWeekInFrench(timeinfo.tm_wday);
-  String month = getMonthInFrench(timeinfo.tm_mon + 1);
-  char dayMonthBuffer[10];
-  snprintf(dayMonthBuffer, sizeof(dayMonthBuffer), "%02d %s", timeinfo.tm_mday, month.c_str());
-
-  return dayOfWeek + " " + String(dayMonthBuffer);
 }
 
 void displayInfo()
@@ -397,25 +368,20 @@ void displayInfo()
   const int batteryTopLeftY = colorTextY + batteryTopMargin;
   drawBatteryLevel(batteryTopLeftX, batteryTopLeftY, batteryPercentage);
 
-  String todayString = getCurrentDateString(false);
-
-  String tomorrowString = getNextDayDateString();
-
   // Calculate positions based on layout parameters
   int secondRectX = leftMargin + rectWidth + rectSpacing;
 
   // draw refresh date time
-  String now = getCurrentDateString(true);
   display.setFont(&FreeSans9pt7b);
   display.setCursor(leftMargin + textOffsetX + adjustTitleX, bottomIndicatorY + textRemainOffsetY);
-  display.print(now);
+  display.print(getFullDateStringAddDelta(true, 0));
 
   // Draw the first rectangle (for today)
   display.drawRoundRect(leftMargin, topMargin, rectWidth, rectHeight, borderRadius, GxEPD_BLACK);
   // Draw date for today
   display.setFont(&FreeSans9pt7b);
   display.setCursor(leftMargin + textOffsetX + adjustTitleX, topLineY);
-  display.print(todayString);
+  display.print(getFullDateStringAddDelta(false, 0));
   // Draw separator
   display.drawLine(leftMargin + textOffsetX, separatorY, rectWidth - textOffsetX, separatorY, GxEPD_BLACK);
   // Draw color for today
@@ -428,7 +394,7 @@ void displayInfo()
   // Draw date for tomorrow
   display.setFont(&FreeSans9pt7b);
   display.setCursor(secondRectX + textOffsetX + adjustTitleX, topLineY);
-  display.print(tomorrowString);
+  display.print(getFullDateStringAddDelta(false, 1));
   // Draw separator
   display.drawLine(secondRectX + textOffsetX, separatorY, secondRectX + rectWidth - textOffsetX, separatorY, GxEPD_BLACK);
   // Draw color for tomorrow
