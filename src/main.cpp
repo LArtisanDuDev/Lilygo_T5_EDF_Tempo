@@ -35,6 +35,9 @@ const char *ntpServer = "pool.ntp.org";
 // Global variables to store TEMPO information
 String todayColor = DAY_NOT_AVAILABLE;
 String tomorrowColor = DAY_NOT_AVAILABLE;
+int countBlue = 0;
+int countRed = 0;
+int countWhite = 0;
 
 bool wifiSucceeded = true;
 int currentLinePos = 0;
@@ -71,7 +74,7 @@ void displayLine(String text);
 tm getTimeWithDelta(int delta);
 String getDayOfWeekInFrench(int dayOfWeek);
 String getMonthInFrench(int month);
-String getShortDateStringAddDelta(int delta);
+String getShortDateStringAddDelta(bool withTime, int delta);
 String getFullDateStringAddDelta(bool withTime, int delta);
 void displayInfo();
 bool getCurrentTime(struct tm *timeinfo);
@@ -131,15 +134,19 @@ void setup()
 #endif
 
       int retour = myAPI->fetchColors(
-          getShortDateStringAddDelta(0),
-          getShortDateStringAddDelta(1),
-          getShortDateStringAddDelta(2));
+          getShortDateStringAddDelta(false, 0),
+          getShortDateStringAddDelta(false, 1),
+          getShortDateStringAddDelta(false, 2),
+          debutSaisonTempo);
 
       if (retour == TEMPOAPI_OK)
       {
         todayColor = myAPI->todayColor;
         tomorrowColor = myAPI->tomorrowColor;
-        
+        countBlue = myAPI->countBlue;
+        countWhite = myAPI->countWhite;
+        countRed = myAPI->countRed;
+
         // clear screen
         display.fillScreen(GxEPD_WHITE);
 
@@ -308,12 +315,19 @@ tm getTimeWithDelta(int delta)
   return timeinfo;
 }
 
-String getShortDateStringAddDelta(int delta)
+String getShortDateStringAddDelta(bool withTime, int delta)
 {
   struct tm timeinfo = getTimeWithDelta(delta);
   char tmpDate[11];
   strftime(tmpDate, sizeof(tmpDate), "%Y-%m-%d", &timeinfo);
-  return String(tmpDate);
+  String result = String(tmpDate);
+  if (withTime)
+  {
+    char timeBuffer[9];
+    snprintf(timeBuffer, sizeof(timeBuffer), "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+    result = result + " " + String(timeBuffer);
+  }
+  return result;
 }
 
 String getFullDateStringAddDelta(bool withTime, int delta)
@@ -358,7 +372,7 @@ void displayInfo()
   const int textRemainExclamationOffsetX = 15;
   const int textRemainOffsetY = 6;
   const int circleOffsetX = 90;
-  const int exclamantionOffsetX = 65;
+  const int exclamantionOffsetX = 45;
 
   // Set the display rotation
   display.setRotation(rotation);
@@ -370,11 +384,6 @@ void displayInfo()
 
   // Calculate positions based on layout parameters
   int secondRectX = leftMargin + rectWidth + rectSpacing;
-
-  // draw refresh date time
-  display.setFont(&FreeSans9pt7b);
-  display.setCursor(leftMargin + textOffsetX + adjustTitleX, bottomIndicatorY + textRemainOffsetY);
-  display.print(getFullDateStringAddDelta(true, 0));
 
   // Draw the first rectangle (for today)
   display.drawRoundRect(leftMargin, topMargin, rectWidth, rectHeight, borderRadius, GxEPD_BLACK);
@@ -402,11 +411,46 @@ void displayInfo()
   display.setCursor(secondRectX + textOffsetX, colorTextY);
   display.print(tomorrowColor);
 
-  // Ajout d'un symbole indiquant que le wifi ne s'est pas connecté
-  if (!wifiSucceeded)
-  {
-    display.print(" w");
-  }
+  // remise en place des compteurs
+  // Positioning for the bottom indicators
+  // int x_bleu = 15;
+  int x_blanc = 15;
+  int x_rouge = x_blanc + exclamantionOffsetX;
+
+  // Draw bottom indicators
+  // Blue circle
+  /*
+  Ma MOA se moque des jours bleus :)
+  display.fillCircle(x_bleu, bottomIndicatorY, circleRadius, GxEPD_BLACK);
+  display.setFont(&FreeSans9pt7b);
+  display.setCursor(x_bleu + textRemainOffsetX, bottomIndicatorY + textRemainOffsetY);
+  display.print(remainingBlueDays + "/300");*/
+
+  // White circle
+  display.drawCircle(x_blanc, bottomIndicatorY, circleRadius, GxEPD_BLACK);
+  display.setCursor(x_blanc + textRemainOffsetX, bottomIndicatorY + textRemainOffsetY);
+  display.print(43 - countWhite);
+
+  // Red rounded rectangle
+  display.drawRoundRect(x_rouge, bottomIndicatorY - redRectHeight / 2, redRectWidth, redRectHeight, redRectRadius, GxEPD_BLACK);
+  // Exclamation mark: upper bar (double line for better visibility)
+  int exclamationCenterX = x_rouge + redRectWidth / 2;
+  display.drawLine(exclamationCenterX - 1, bottomIndicatorY - 4, exclamationCenterX - 1, bottomIndicatorY + 2, GxEPD_BLACK);
+  display.drawLine(exclamationCenterX, bottomIndicatorY - 4, exclamationCenterX, bottomIndicatorY + 2, GxEPD_BLACK); // Adjacent line to thicken
+  // Exclamation mark: lower dot (double line for better visibility)
+  display.drawLine(exclamationCenterX - 1, bottomIndicatorY + 4, exclamationCenterX - 1, bottomIndicatorY + 4, GxEPD_BLACK);
+  display.drawLine(exclamationCenterX, bottomIndicatorY + 4, exclamationCenterX, bottomIndicatorY + 4, GxEPD_BLACK); // Adjacent line to thicken
+
+  // ROUGE
+  display.setCursor(x_rouge + textRemainExclamationOffsetX, bottomIndicatorY + textRemainOffsetY);
+  display.print(22 - countRed);
+
+  // draw refresh date time
+  display.setFont(&FreeSans9pt7b);
+  display.setCursor(leftMargin + textOffsetX + 100 + adjustTitleX, bottomIndicatorY + textRemainOffsetY);
+  String tmpDate = getShortDateStringAddDelta(true, 0);
+  tmpDate.remove(0,5);
+  display.print(tmpDate);
 }
 
 // Fonction pour obtenir le temps actuel sous forme de structure tm
