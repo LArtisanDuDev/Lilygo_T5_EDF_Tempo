@@ -447,9 +447,9 @@ void displayInfo()
 
   // draw refresh date time
   display.setFont(&FreeSans9pt7b);
-  display.setCursor(leftMargin + textOffsetX + 100 + adjustTitleX, bottomIndicatorY + textRemainOffsetY);
-  String tmpDate = getShortDateStringAddDelta(true, 0);
-  tmpDate.remove(0,5);
+  display.setCursor(leftMargin + textOffsetX + 120 + adjustTitleX, bottomIndicatorY + textRemainOffsetY);
+  String tmpDate = getFullDateStringAddDelta(true, 0);
+  tmpDate = tmpDate.substring(4,16);
   display.print(tmpDate);
 }
 
