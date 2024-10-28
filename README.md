@@ -5,7 +5,9 @@
 Ce dépôt contient le code source pour un dispositif qui affiche les informations relatives au tarif TEMPO d'EDF sur un écran E-Ink, en utilisant un microcontrôleur ESP32. Le dispositif récupère les données TEMPO en temps réel via une API et affiche la couleur du jour et du lendemain.<br>
 Ce projet était initialement basé sur https://github.com/kaloskagatos/EDF-Tempo-E-Ink-Display.<br>
 Je ne maintenais plus la branche pour Arduino IDE aussi j'ai supprimé mon fork et recréé ce projet.<br>
-Nouveauté 2024 : les API EDF ne répondent plus. Migration du projet vers les API RTE (https://data.rte-france.com/)
+Nouveauté 2024 : les API EDF ne répondent plus. Migration du projet vers les API RTE (https://data.rte-france.com/)<br>
+Nouveauté Bis : après être passé sur les API RTE avec inscription, il y a maintenant une autre API RTE sans inscription.
+Il est désormais possible d'utiliser l'une ou l'autre.
 <br>
 ![eTempo Display](doc/eTempo.jpg)
 
@@ -15,9 +17,12 @@ Pour la configuration du réseau WiFi vous devez renseigner les variables wifi_s
 
 ## 🌐 API RTE
 
+Si vous voulez utiliser les API sans inscription, dans le fichier TOCUSTOMIZE.h, en ligne 6, dans la variable tempoSansCompteTRE il faut mettre la valeur true.
+Si vous voulez utiliser les API avec inscritpion (probablement plus durables), mettez la valeur false.
+
 Pour utiliser les API RTE vous devez vous créer un compte ici : https://data.rte-france.com/create_account<br>
 Ensuite, il faut vous abonner à l'api : https://data.rte-france.com/catalog/-/api/consumption/Tempo-Like-Supply-Contract/v1.1<br>
-Puis créer une application de type MOBILE<br>
+Puis créer une application de type MOBILE
 Vous aurez alors accès à vos client id et client secrets qu'il faudra renseigner dans le fichier TOCUSTOMIZE.h
 
 ## ⏰ Heures de Réveil Préprogrammées
@@ -52,5 +57,4 @@ Pour le support ou pour entrer en contact, veuillez ouvrir un ticket dans la sec
 
 ## Bugs connus
 
-* Le preview RTE n'a pas encore pu être réellement testée
 * Pas de gestion d'erreur, pas de retry

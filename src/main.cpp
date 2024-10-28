@@ -132,13 +132,23 @@ void setup()
 #ifdef DEBUG_API
       myAPI->setDebug(true);
 #endif
-      String currentTZ = getDateStringForRTE(0);
-      currentTZ.remove(0,10);
-      int retour = myAPI->fetchColors(
-          getDateStringForRTE(0),
-          getDateStringForRTE(1),
-          getDateStringForRTE(2),
-          debutSaisonTempo + currentTZ);
+
+      int retour = 0;
+      if (tempoSansCompteTRE) {
+        retour = myAPI->fecthColorsFreeApi(
+            getDateStringForRTE(0).substring(0,10),
+            getDateStringForRTE(1).substring(0,10),
+            saisonTempo);
+      } else {
+        String currentTZ = getDateStringForRTE(0);
+        currentTZ.remove(0,10);
+        
+        retour = myAPI->fetchColors(
+            getDateStringForRTE(0),
+            getDateStringForRTE(1),
+            getDateStringForRTE(2),
+            debutSaisonTempo + currentTZ);
+      }
 
       if (retour == TEMPOAPI_OK)
       {
