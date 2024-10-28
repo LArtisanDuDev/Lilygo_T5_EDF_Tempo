@@ -74,7 +74,7 @@ void displayLine(String text);
 tm getTimeWithDelta(int delta);
 String getDayOfWeekInFrench(int dayOfWeek);
 String getMonthInFrench(int month);
-String getShortDateStringAddDelta(bool withTime, int delta);
+String getDateStringForRTE(int delta);
 String getFullDateStringAddDelta(bool withTime, int delta);
 void displayInfo();
 bool getCurrentTime(struct tm *timeinfo);
@@ -132,12 +132,13 @@ void setup()
 #ifdef DEBUG_API
       myAPI->setDebug(true);
 #endif
-
+      String currentTZ = getDateStringForRTE(0);
+      currentTZ.remove(0,10);
       int retour = myAPI->fetchColors(
-          getShortDateStringAddDelta(false, 0),
-          getShortDateStringAddDelta(false, 1),
-          getShortDateStringAddDelta(false, 2),
-          debutSaisonTempo);
+          getDateStringForRTE(0),
+          getDateStringForRTE(1),
+          getDateStringForRTE(2),
+          debutSaisonTempo + currentTZ);
 
       if (retour == TEMPOAPI_OK)
       {
@@ -315,18 +316,13 @@ tm getTimeWithDelta(int delta)
   return timeinfo;
 }
 
-String getShortDateStringAddDelta(bool withTime, int delta)
+String getDateStringForRTE(int delta)
 {
   struct tm timeinfo = getTimeWithDelta(delta);
   char tmpDate[11];
   strftime(tmpDate, sizeof(tmpDate), "%Y-%m-%d", &timeinfo);
-  String result = String(tmpDate);
-  if (withTime)
-  {
-    char timeBuffer[9];
-    snprintf(timeBuffer, sizeof(timeBuffer), "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-    result = result + " " + String(timeBuffer);
-  }
+  String result = String(tmpDate) + "T00:00:00+0" + String(timeinfo.tm_isdst+1)+":00";
+  Serial.println(result);
   return result;
 }
 
