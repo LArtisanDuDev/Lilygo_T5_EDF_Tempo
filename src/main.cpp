@@ -24,8 +24,9 @@
 
 // #define DEBUG_WIFI
 
-// pour logger les flux
-#define DEBUG_API
+// pour logger les flux et afficher les codes retours
+// #define DEBUG_API
+// #define DEBUG_ERROR_CODE
 
 GxIO_Class io(SPI, /*CS=5*/ SS, /*DC=*/17, /*RST=*/16);
 GxEPD_Class display(io, /*RST=*/16, /*BUSY=*/4);
@@ -63,6 +64,8 @@ const WakeupTime wakeupTimes[] = {
     {6, 30}, // Réveil à 06:30 pour préview RTE
     {11, 5}  // Réveil à 11:05
 };
+
+String error_code = "";
 
 // Definitions
 void setup();
@@ -161,12 +164,36 @@ void setup()
         // clear screen
         display.fillScreen(GxEPD_WHITE);
 
+        for(int i=0;i<6;i++) {
+          error_code += String(myAPI->error_code[i]) + " | ";
+        }
+        Serial.println(error_code);
+        
+        
+
 #ifdef DEBUG_GRID
         drawDebugGrid();
 #endif
         // Display info
         displayInfo();
         display.update();
+      } else {
+        Serial.println("Erreur d'appels API.");
+        displayLine("Erreur d'appels API");
+        displayLine("Sans compte RTE:");
+        if (tempoSansCompteTRE) {
+          displayLine("true");
+        } else {
+          displayLine("false");
+        }
+        for(int i=0;i<6;i++) {
+          displayLine(String(myAPI->error_code[i]));
+        }
+
+        display.update();
+        // Deep sleep for 5 min
+        esp_sleep_enable_timer_wakeup(5 * 60 * 1000000LL);
+        esp_deep_sleep_start();
       }
     }
 
@@ -457,6 +484,19 @@ void displayInfo()
   String tmpDate = getFullDateStringAddDelta(true, 0);
   tmpDate = tmpDate.substring(4,16);
   display.print(tmpDate);
+
+#ifdef DEBUG_ERROR_CODE
+  // on affiche les codes retours HTTP
+  display.setFont(&Org_01);
+  display.setCursor(10, 11);
+  if (tempoSansCompteTRE) {
+    display.print("NO_RTE");
+  } else {
+    display.print("RTE");
+  }
+  display.setCursor(10,17);
+  display.print(error_code);
+#endif
 }
 
 // Fonction pour obtenir le temps actuel sous forme de structure tm
