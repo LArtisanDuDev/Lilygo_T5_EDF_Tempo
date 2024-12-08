@@ -25,8 +25,8 @@
 // #define DEBUG_WIFI
 
 // pour logger les flux et afficher les codes retours
-// #define DEBUG_API
-// #define DEBUG_ERROR_CODE
+//#define DEBUG_API
+//#define DEBUG_ERROR_CODE
 
 GxIO_Class io(SPI, /*CS=5*/ SS, /*DC=*/17, /*RST=*/16);
 GxEPD_Class display(io, /*RST=*/16, /*BUSY=*/4);
@@ -39,6 +39,9 @@ String tomorrowColor = DAY_NOT_AVAILABLE;
 int countBlue = 0;
 int countRed = 0;
 int countWhite = 0;
+
+RTC_DATA_ATTR unsigned int counterRetry = 0;
+const int MAX_RETRY = 3;
 
 bool wifiSucceeded = true;
 int currentLinePos = 0;
@@ -122,11 +125,11 @@ void setup()
     // Initialiser l'heure
     if (!initializeTime())
     {
-      Serial.println("Erreur de synchronisation NTP: passage en deep sleep pendant 1 heures.");
+      Serial.println("Erreur de synchronisation NTP: passage en deep sleep pendant 1 minute.");
       displayLine("Err de conn ou de synchro: deep sleep.");
       display.update();
-      // Deep sleep for 1 hours
-      esp_sleep_enable_timer_wakeup(1 * 60 * 60 * 1000000LL);
+      // Deep sleep for 1 minut
+      esp_sleep_enable_timer_wakeup(1 * 60 * 1000000LL);
       esp_deep_sleep_start();
     }
     else
@@ -136,7 +139,7 @@ void setup()
       myAPI->setDebug(true);
 #endif
 
-      int retour = 0;
+      int retour = TEMPOAPI_KO;
       if (tempoSansCompteTRE) {
         retour = myAPI->fecthColorsFreeApi(
             getDateStringForRTE(0).substring(0,10),
@@ -153,8 +156,12 @@ void setup()
             debutSaisonTempo + currentTZ);
       }
 
-      if (retour == TEMPOAPI_OK)
+      if (retour == TEMPOAPI_OK 
+        && myAPI->todayColor != String(DAY_NOT_AVAILABLE)
+        && myAPI->tomorrowColor != String(DAY_NOT_AVAILABLE)
+      )
       {
+        counterRetry = 0;
         todayColor = myAPI->todayColor;
         tomorrowColor = myAPI->tomorrowColor;
         countBlue = myAPI->countBlue;
@@ -189,11 +196,20 @@ void setup()
         for(int i=0;i<6;i++) {
           displayLine(String(myAPI->error_code[i]));
         }
-
+        
+        displayLine("Retry : " + String(counterRetry) + "/" + String(MAX_RETRY));
+        if (counterRetry < MAX_RETRY) {
+          displayLine("Reboot");
+        }
+          
         display.update();
-        // Deep sleep for 5 min
-        esp_sleep_enable_timer_wakeup(5 * 60 * 1000000LL);
-        esp_deep_sleep_start();
+        // Deep sleep for 1 min
+        if (counterRetry < MAX_RETRY) {
+          counterRetry++;
+          esp_sleep_enable_timer_wakeup(1 * 60 * 1000000LL);
+          esp_deep_sleep_start();
+        }
+        
       }
     }
 
