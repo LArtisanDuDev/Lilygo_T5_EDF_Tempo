@@ -158,7 +158,6 @@ void setup()
 
       if (retour == TEMPOAPI_OK 
         && myAPI->todayColor != String(DAY_NOT_AVAILABLE)
-        && myAPI->tomorrowColor != String(DAY_NOT_AVAILABLE)
       )
       {
         counterRetry = 0;
