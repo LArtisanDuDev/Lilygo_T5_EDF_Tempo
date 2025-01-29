@@ -33,6 +33,8 @@ Le dispositif est programmé pour se réveiller à 2h00, 6h30 et 11h05
 
 - **Board ESP-32 E-Ink**: T5 V2.3.1 - Écran E-Paper 2.13 pouces à faible consommation d'énergie, modèle GDEM0213B74 CH9102F [Q300]
   - [Lien vers le produit](https://www.lilygo.cc/products/t5-v2-3-1)
+    ❗Attention, la version 2.3.2 (vendue sur Aliexpress et probablement ailleurs) n'a pas de puce série embarquée. Il faut un adaptateur supplémentaire pour sa programmation : [t-u2t](https://lilygo.cc/products/t-u2t).
+      Voir discussion [Issue 2](https://github.com/LArtisanDuDev/Lilygo_T5_EDF_Tempo/issues/2)
 
 ## Librairies externes utilisées 
 
