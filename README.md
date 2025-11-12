@@ -60,4 +60,4 @@ Pour le support ou pour entrer en contact, veuillez ouvrir un ticket dans la sec
 
 ## Bugs connus
 
-* Pas de gestion d'erreur, pas de retry
+* Not yet 😉
