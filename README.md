@@ -8,6 +8,7 @@ Je ne maintenais plus la branche pour Arduino IDE aussi j'ai supprimé mon fork 
 Nouveauté 2024 : les API EDF ne répondent plus. Migration du projet vers les API RTE (https://data.rte-france.com/)<br>
 Nouveauté Bis : après être passé sur les API RTE avec inscription, il y a maintenant une autre API RTE sans inscription.
 Il est désormais possible d'utiliser l'une ou l'autre.
+Nouveauté 2025 : rien du tout, ça marche toujours comme il faut 👌
 <br>
 ![eTempo Display](doc/eTempo.jpg)
 
