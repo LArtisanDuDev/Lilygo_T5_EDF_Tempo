@@ -40,6 +40,10 @@ int countBlue = 0;
 int countRed = 0;
 int countWhite = 0;
 
+String saisonTempo = "20xx-20xx";
+String debutSaisonTempo = "20xx-09-01";
+
+
 RTC_DATA_ATTR unsigned int counterRetry = 0;
 const int MAX_RETRY = 3;
 
@@ -87,6 +91,7 @@ bool getCurrentTime(struct tm *timeinfo);
 time_t getNextWakeupTime();
 void goToDeepSleepUntilNextWakeup();
 void drawDebugGrid();
+void initSaison();
 
 void setup()
 {
@@ -134,6 +139,7 @@ void setup()
     }
     else
     {
+      initSaison();
       TempoLikeSupplyContractAPI *myAPI = new TempoLikeSupplyContractAPI(client_secret, client_id);
 #ifdef DEBUG_API
       myAPI->setDebug(true);
@@ -366,6 +372,25 @@ tm getTimeWithDelta(int delta)
   timeinfo.tm_mday += delta;
   mktime(&timeinfo);
   return timeinfo;
+}
+
+void initSaison() {
+  struct tm timeinfo = getTimeWithDelta(0);
+  int year = timeinfo.tm_year + 1900;
+  int month = timeinfo.tm_mon + 1;
+
+  if (month >= 9)
+   {
+      saisonTempo = String(year) + "-" + String(year + 1);
+      debutSaisonTempo = String(year) + "-09-01";
+   }
+   else
+   { 
+      saisonTempo = String(year - 1) + "-" + String(year);
+      debutSaisonTempo = String(year - 1) + "-09-01";
+   }
+   Serial.println("Saison : " + saisonTempo);
+
 }
 
 String getDateStringForRTE(int delta)
