@@ -7,7 +7,8 @@ Ce projet était initialement basé sur https://github.com/kaloskagatos/EDF-Temp
 Je ne maintenais plus la branche pour Arduino IDE aussi j'ai supprimé mon fork et recréé ce projet.<br>
 Nouveauté 2024 : les API EDF ne répondent plus. Migration du projet vers les API RTE (https://data.rte-france.com/)<br>
 Nouveauté Bis : après être passé sur les API RTE avec inscription, il y a maintenant une autre API RTE sans inscription.
-Il est désormais possible d'utiliser l'une ou l'autre.
+Il est désormais possible d'utiliser l'une ou l'autre.<br>
+Nouveauté 2025 : rien du tout, ça marche toujours comme il faut 👌
 <br>
 ![eTempo Display](doc/eTempo.jpg)
 
@@ -60,4 +61,4 @@ Pour le support ou pour entrer en contact, veuillez ouvrir un ticket dans la sec
 
 ## Bugs connus
 
-* Pas de gestion d'erreur, pas de retry
+* Not yet 😉
