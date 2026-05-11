@@ -9,6 +9,7 @@
 #include <GxIO/GxIO.h>
 #include <WiFi.h>
 #include <MyDumbWifi.h>
+#include <MyTimeLibrary.h>
 #include <TempoLikeSupplyContractAPI.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
@@ -43,6 +44,8 @@ int countWhite = 0;
 String saisonTempo = "20xx-20xx";
 String debutSaisonTempo = "20xx-09-01";
 
+//Time lib
+MyTimeLibrary tl;
 
 RTC_DATA_ATTR unsigned int counterRetry = 0;
 const int MAX_RETRY = 3;
@@ -81,11 +84,7 @@ void drawBatteryLevel(int batteryTopLeftX, int batteryTopLeftY, int percentage);
 void updateBatteryPercentage(int &percentage, float &voltage);
 bool initializeTime();
 void displayLine(String text);
-tm getTimeWithDelta(int delta);
-String getDayOfWeekInFrench(int dayOfWeek);
-String getMonthInFrench(int month);
 String getDateStringForRTE(int delta);
-String getFullDateStringAddDelta(bool withTime, int delta);
 void displayInfo();
 bool getCurrentTime(struct tm *timeinfo);
 time_t getNextWakeupTime();
@@ -347,35 +346,10 @@ void displayLine(String text)
   currentLinePos += 10;
 }
 
-// Helper functions to get French abbreviations
-String getDayOfWeekInFrench(int dayOfWeek)
-{
-  const char *daysFrench[] = {"Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"};
-  return daysFrench[dayOfWeek % 7]; // Use modulo just in case
-}
 
-String getMonthInFrench(int month)
-{
-  const char *monthsFrench[] = {"Jan", "Fev", "Mar", "Avr", "Mai", "Juin", "Juil", "Aou", "Sep", "Oct", "Nov", "Dec"};
-  return monthsFrench[(month - 1) % 12]; // Use modulo and adjust since tm_mon is [0,11]
-}
-
-tm getTimeWithDelta(int delta)
-{
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo))
-  {
-    Serial.println("Echec de récupération de la date !");
-    timeinfo = {0};
-  }
-
-  timeinfo.tm_mday += delta;
-  mktime(&timeinfo);
-  return timeinfo;
-}
 
 void initSaison() {
-  struct tm timeinfo = getTimeWithDelta(0);
+  struct tm timeinfo = tl.getTimeWithDelta(0);
   int year = timeinfo.tm_year + 1900;
   int month = timeinfo.tm_mon + 1;
 
@@ -395,29 +369,11 @@ void initSaison() {
 
 String getDateStringForRTE(int delta)
 {
-  struct tm timeinfo = getTimeWithDelta(delta);
+  struct tm timeinfo = tl.getTimeWithDelta(delta);
   char tmpDate[11];
   strftime(tmpDate, sizeof(tmpDate), "%Y-%m-%d", &timeinfo);
   String result = String(tmpDate) + "T00:00:00+0" + String(timeinfo.tm_isdst+1)+":00";
   Serial.println(result);
-  return result;
-}
-
-String getFullDateStringAddDelta(bool withTime, int delta)
-{
-  struct tm timeinfo = getTimeWithDelta(delta);
-  String dayOfWeek = getDayOfWeekInFrench(timeinfo.tm_wday);
-  String month = getMonthInFrench(timeinfo.tm_mon + 1); // tm_mon is months since January - [0,11]
-  char dayBuffer[3];
-  snprintf(dayBuffer, sizeof(dayBuffer), "%02d", timeinfo.tm_mday);
-
-  String result = dayOfWeek + " " + String(dayBuffer) + " " + month;
-  if (withTime)
-  {
-    char timeBuffer[9];
-    snprintf(timeBuffer, sizeof(timeBuffer), "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-    result = result + " " + String(timeBuffer);
-  }
   return result;
 }
 
@@ -463,7 +419,7 @@ void displayInfo()
   // Draw date for today
   display.setFont(&FreeSans9pt7b);
   display.setCursor(leftMargin + textOffsetX + adjustTitleX, topLineY);
-  display.print(getFullDateStringAddDelta(false, 0));
+  display.print(tl.getFullDateStringAddDelta(false, 0));
   // Draw separator
   display.drawLine(leftMargin + textOffsetX, separatorY, rectWidth - textOffsetX, separatorY, GxEPD_BLACK);
   // Draw color for today
@@ -476,7 +432,7 @@ void displayInfo()
   // Draw date for tomorrow
   display.setFont(&FreeSans9pt7b);
   display.setCursor(secondRectX + textOffsetX + adjustTitleX, topLineY);
-  display.print(getFullDateStringAddDelta(false, 1));
+  display.print(tl.getFullDateStringAddDelta(false, 1));
   // Draw separator
   display.drawLine(secondRectX + textOffsetX, separatorY, secondRectX + rectWidth - textOffsetX, separatorY, GxEPD_BLACK);
   // Draw color for tomorrow
@@ -521,7 +477,7 @@ void displayInfo()
   // draw refresh date time
   display.setFont(&FreeSans9pt7b);
   display.setCursor(leftMargin + textOffsetX + 120 + adjustTitleX, bottomIndicatorY + textRemainOffsetY);
-  String tmpDate = getFullDateStringAddDelta(true, 0);
+  String tmpDate = tl.getFullDateStringAddDelta(true, 0);
   tmpDate = tmpDate.substring(4,16);
   display.print(tmpDate);
 
